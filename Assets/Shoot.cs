@@ -7,21 +7,37 @@ public class Shoot : MonoBehaviour
     [SerializeField] private GameObject bulletPrefab;
     [SerializeField] private float bulletSpeed;
     [SerializeField] private float bulletDamage;
+    [SerializeField] private float fireRate;
     [SerializeField] private Vector3 gameArea;
+    private bool canFire = true;
 
     private void Update()
     {
-        if (Input.GetMouseButtonDown(0))
+        if (Input.GetMouseButton(0))
         {
-            var bulletInstance = Instantiate(bulletPrefab, transform.position, Quaternion.identity);
-            var bullet = bulletInstance.GetComponent<Rigidbody>();
+            Fire();
+        }
+    }
+    
+    private void Fire()
+    {
+        if (canFire)
+        {
+            GameObject bulletInstance = Instantiate(bulletPrefab, transform.position, Quaternion.identity);
+            Rigidbody bullet = bulletInstance.GetComponent<Rigidbody>();
 
             Vector2 mousePos = new Vector2(
                 Input.mousePosition.x - Screen.width / 2,
                 Input.mousePosition.y - Screen.height / 2
             );
+        
+            Vector3 trajectory = BulletTrajectory(mousePos);
             
-            StartCoroutine(SpawnBullet(bullet, BulletTrajectory(mousePos), bulletInstance, Time.deltaTime));
+            IEnumerator routine = SpawnBullet(bulletInstance, bullet, trajectory);
+            StartCoroutine(routine);
+           
+            canFire = false;
+            StartCoroutine(SetDelay());
         }
     }
 
@@ -32,29 +48,29 @@ public class Shoot : MonoBehaviour
     }
     
     private IEnumerator SpawnBullet(
-        Rigidbody bullet,
-        Vector3 trajectory,
         GameObject bulletInstance,
-        float deltaTime
-    )
+        Rigidbody bullet,
+        Vector3 trajectory
+        )
     {
         while (Math.Abs(bullet.position.x) < gameArea.x / 2
                && Math.Abs(bullet.position.z) < gameArea.z / 2)
         {
-            var newPos = new Vector3(
-                bullet.position.x + trajectory.x * bulletSpeed,
-                1,
-                bullet.position.z + trajectory.z * bulletSpeed
-            );
-            bullet.MovePosition(newPos);
-
-            yield return new WaitForSeconds(deltaTime);
+            bullet.MovePosition(bullet.position + trajectory * bulletSpeed);
+            yield return new WaitForSeconds(Time.deltaTime);
         }
 
         yield return new WaitForSeconds(0.5F);
-        
         Destroy(bulletInstance);
 
+        yield return null;
+    }
+
+    private IEnumerator SetDelay()
+    {
+        yield return new WaitForSeconds(1 / fireRate);
+        canFire = true;
+        
         yield return null;
     }
 }
