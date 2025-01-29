@@ -21,7 +21,7 @@ public class Shoot : MonoBehaviour
                 Input.mousePosition.y - Screen.height / 2
             );
             
-            StartCoroutine(SpawnBullet(bullet, BulletTrajectory(mousePos), bulletInstance, Time.deltaTime));
+            StartCoroutine(SpawnBullet(bullet, BulletTrajectory(mousePos), bulletInstance));
         }
     }
 
@@ -34,25 +34,17 @@ public class Shoot : MonoBehaviour
     private IEnumerator SpawnBullet(
         Rigidbody bullet,
         Vector3 trajectory,
-        GameObject bulletInstance,
-        float deltaTime
+        GameObject bulletInstance
     )
     {
         while (Math.Abs(bullet.position.x) < gameArea.x / 2
                && Math.Abs(bullet.position.z) < gameArea.z / 2)
         {
-            var newPos = new Vector3(
-                bullet.position.x + trajectory.x * bulletSpeed,
-                1,
-                bullet.position.z + trajectory.z * bulletSpeed
-            );
-            bullet.MovePosition(newPos);
-
-            yield return new WaitForSeconds(deltaTime);
+            bullet.MovePosition(bullet.position + trajectory * bulletSpeed);
+            yield return new WaitForSeconds(Time.deltaTime);
         }
 
         yield return new WaitForSeconds(0.5F);
-        
         Destroy(bulletInstance);
 
         yield return null;
